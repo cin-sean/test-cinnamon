@@ -1,7 +1,7 @@
 from celery import chain, chord
 import ast
-from app.api.enums.operation_type import OperationType
-from app.api.enums.worker_queue import WorkerQueue
+from app.shared.enums.operation_type import OperationType
+from app.shared.enums.worker_queue import WorkerQueue
 from app.worker.celery_consumer import add, subtract, multiply, divide, xsum
 import operator
 
@@ -13,10 +13,10 @@ OP_MAP = {
 }
 
 OP_QUEUE = {
-    ast.Add: WorkerQueue.ADD,
-    ast.Sub: WorkerQueue.SUBTRACT,
-    ast.Mult: WorkerQueue.MULTIPLY,
-    ast.Div: WorkerQueue.DIVIDE,
+    ast.Add: WorkerQueue.ADD_QUEUE,
+    ast.Sub: WorkerQueue.SUBTRACT_QUEUE,
+    ast.Mult: WorkerQueue.MULTIPLY_QUEUE,
+    ast.Div: WorkerQueue.DIVIDE_QUEUE,
 }
 
 ops = {
@@ -85,7 +85,7 @@ def build_shorthand_chaining(node):
         if isinstance(left, (int, float)) and isinstance(right, (int, float)):
             return op.s(left, right).set(queue=op_queue)
 
-        return (left | op.s(right).set(queue=op_queue))
+        return left | op.s(right).set(queue=op_queue)
     elif isinstance(node, ast.Constant):
         return node.value
     else:
@@ -94,32 +94,34 @@ def build_shorthand_chaining(node):
 def build_chord():
     return chord(
                 header=[
-                    add.s(1, 1).set(queue=WorkerQueue.ADD),
-                    add.s(2, 2).set(queue=WorkerQueue.ADD),
-                    add.s(9, 9).set(queue=WorkerQueue.ADD)
+                    add.s(1, 1).set(queue=WorkerQueue.ADD_QUEUE),
+                    add.s(2, 2).set(queue=WorkerQueue.ADD_QUEUE),
+                    add.s(9, 9).set(queue=WorkerQueue.ADD_QUEUE)
                 ],
-                body=xsum.s().set(queue=WorkerQueue.ADD)
+                body=xsum.s().set(queue=WorkerQueue.ADD_QUEUE)
             )
 
 def build_chord_with_callback():
-    callback = xsum.s().set(queue=WorkerQueue.ADD)
+    callback = xsum.s().set(queue=WorkerQueue.ADD_QUEUE)
     return chord(
                 header=[
-                    add.s(1, 1).set(queue=WorkerQueue.ADD),
-                    add.s(2, 2).set(queue=WorkerQueue.ADD),
-                    add.s(9, 9).set(queue=WorkerQueue.ADD)
+                    add.s(1, 1).set(queue=WorkerQueue.ADD_QUEUE),
+                    add.s(2, 2).set(queue=WorkerQueue.ADD_QUEUE),
+                    add.s(9, 9).set(queue=WorkerQueue.ADD_QUEUE)
                 ]
             )(callback)
 
-def extract_expression(expression: str, type: str):
+def extract_expression(expression: str, operation_type: OperationType):
     tree = ast.parse(expression, mode='eval')
-    if type == OperationType.MUTABLE:
-        return build_chain_mutable(tree.body)
-    elif type == OperationType.IMMUTABLE:
-        return build_chain_immutable(tree.body)[0]
-    elif type == OperationType.SHORTHAND_CHAINING:
-        return build_shorthand_chaining(tree.body)
-    elif type == OperationType.CHORD:
-        return build_chord()
-    elif type == OperationType.CHORD_WITH_CALLBACK:
-        return build_chord_with_callback()
+    match operation_type:
+        case OperationType.MUTABLE:
+            return build_chain_mutable(tree.body)
+        case OperationType.IMMUTABLE:
+            return build_chain_immutable(tree.body)[0]
+        case OperationType.SHORTHAND_CHAINING:
+            return build_shorthand_chaining(tree.body)
+        case OperationType.CHORD:
+            return build_chord()
+        case OperationType.CHORD_WITH_CALLBACK:
+            return build_chord_with_callback()
+    return None

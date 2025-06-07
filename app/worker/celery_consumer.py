@@ -1,28 +1,55 @@
 from celery import Celery
+from app.shared.enums.task_name import TaskName
+from app.shared.enums.worker_queue import WorkerQueue
+from app.shared.settings import settings
+from app.worker.base_retry_task import BaseRetryTask
+from app.worker.settings import settings as worker_settings
 
-from app.api.enums.task_name import TaskName
-from app.api.enums.worker_queue import WorkerQueue
+celery_consumer = Celery('tasks', broker=settings.BROKER_URL, backend=settings.REDIS_URL)
 
-broker_url ="amqp://admin:cinnamon@rabbitmq:5672//"
-redis_url = "redis://redis:6379/0"
-celery_consumer = Celery('tasks', broker=broker_url, backend=redis_url)
-
-@celery_consumer.task(name=TaskName.ADD, queue=WorkerQueue.ADD)
+@celery_consumer.task(
+    base=BaseRetryTask,
+    name=TaskName.ADD,
+    queue=WorkerQueue.ADD_QUEUE,
+    soft_time_limit=worker_settings.SOFT_TIME_LIMIT,
+)
 def add(a: float, b: float):
     return a + b
 
-@celery_consumer.task(name=TaskName.SUBTRACT, queue=WorkerQueue.SUBTRACT)
+@celery_consumer.task(
+    base=BaseRetryTask,
+    name=TaskName.SUBTRACT,
+    queue=WorkerQueue.SUBTRACT_QUEUE,
+    soft_time_limit=worker_settings.SOFT_TIME_LIMIT,
+)
 def subtract(a: float, b: float):
     return a - b
 
-@celery_consumer.task(name=TaskName.MULTIPLY, queue=WorkerQueue.MULTIPLY)
+@celery_consumer.task(
+    base=BaseRetryTask,
+    name=TaskName.MULTIPLY,
+    queue=WorkerQueue.MULTIPLY_QUEUE,
+    soft_time_limit=worker_settings.SOFT_TIME_LIMIT,
+)
 def multiply(a: float, b: float):
     return a * b
 
-@celery_consumer.task(name=TaskName.DIVIDE, queue=WorkerQueue.DIVIDE)
+@celery_consumer.task(
+    base=BaseRetryTask,
+    name=TaskName.DIVIDE,
+    queue=WorkerQueue.DIVIDE_QUEUE,
+    soft_time_limit=worker_settings.SOFT_TIME_LIMIT,
+)
 def divide(a: float, b: float):
+    if b == 0:
+        raise ValueError("Cannot divide by zero")
     return a / b
 
-@celery_consumer.task(name=TaskName.XSUM, queue=WorkerQueue.ADD)
+@celery_consumer.task(
+    base=BaseRetryTask,
+    name=TaskName.XSUM,
+    queue=WorkerQueue.ADD_QUEUE,
+    soft_time_limit=worker_settings.SOFT_TIME_LIMIT,
+)
 def xsum(arr: list[float]):
     return sum(arr)

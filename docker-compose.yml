@@ -15,46 +15,60 @@ services:
 
   worker_add:
     build: .
-    command: celery -A app.worker.consumer worker --loglevel=info -Q add_queue
+    command: celery -A app.worker.celery_consumer worker --loglevel=info -Q add_queue
     depends_on:
       - rabbitmq
       - redis
     volumes:
       - ./app/worker/:/app/app/worker
+      - ./app/shared/:/app/app/shared
+    env_file:
+      - .env
   
   worker_subtract:
     build: .
-    command: celery -A app.worker.consumer worker --loglevel=info -Q subtract_queue
+    command: celery -A app.worker.celery_consumer worker --loglevel=info -Q subtract_queue
     depends_on:
       - rabbitmq
       - redis
     volumes:
       - ./app/worker/:/app/app/worker
+      - ./app/shared/:/app/app/shared
+    env_file:
+      - .env
   
   worker_multiply:
     build: .
-    command: celery -A app.worker.consumer worker --loglevel=info -Q multiply_queue
+    command: celery -A app.worker.celery_consumer worker --loglevel=info -Q multiply_queue
     depends_on:
       - rabbitmq
       - redis
     volumes:
       - ./app/worker/:/app/app/worker
+      - ./app/shared/:/app/app/shared
+    env_file:
+      - .env
   
   worker_divide:
     build: .
-    command: celery -A app.worker.consumer worker --loglevel=info -Q divide_queue
+    command: celery -A app.worker.celery_consumer worker --loglevel=info -Q divide_queue
     depends_on:
       - rabbitmq
       - redis
     volumes:
       - ./app/worker/:/app/app/worker
+      - ./app/shared/:/app/app/shared
+    env_file:
+      - .env
 
   api:
     build: .
-    command: uvicorn app.api.main:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn app.api.main:app --host 0.0.0.0 --port 8000 --log-config /app/app/logger/logger-config.yaml --reload
     container_name: fastapi_app
     ports:
       - "8000:8000"
     volumes:
       - ./app/:/app/app
+    env_file:
+      - .env
     restart: always
