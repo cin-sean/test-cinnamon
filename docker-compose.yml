@@ -25,7 +25,7 @@ services:
       - ./app/shared/:/app/app/shared
     env_file:
       - .env
-  
+
   worker_subtract:
     build:
       context: ./app/worker
@@ -38,7 +38,7 @@ services:
       - ./app/shared/:/app/app/shared
     env_file:
       - .env
-  
+
   worker_multiply:
     build:
       context: ./app/worker
@@ -51,7 +51,7 @@ services:
       - ./app/shared/:/app/app/shared
     env_file:
       - .env
-  
+
   worker_divide:
     build:
       context: ./app/worker

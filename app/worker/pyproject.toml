@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "roundabout workers"
+version = "1.0.0"
+description = ""
+authors = ["Sean <sean@cinnamon.is>"]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+celery = {extras = ["redis", "rabbitmq"], version = "^5.4.0"}
+amqp="^5.3.1"
+pydantic="^2.11.5"
+pydantic-settings="^2.9.1"
+pyyaml="^6.0.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.masonry.api"

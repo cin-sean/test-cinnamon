@@ -1,5 +1,6 @@
 from enum import StrEnum, auto
 
+
 class OperationType(StrEnum):
     MUTABLE = auto()
     IMMUTABLE = auto()

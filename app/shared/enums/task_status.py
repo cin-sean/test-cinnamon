@@ -1,5 +1,6 @@
 from enum import StrEnum, auto
 
+
 class TaskStatus(StrEnum):
     SUCCESS = auto()
     FAILURE = auto()

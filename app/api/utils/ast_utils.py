@@ -1,9 +1,14 @@
-from celery import chain, chord
 import ast
+import operator
+from _ast import expr
+
+from celery import chain, chord
+from celery.canvas import Signature
+from celery.result import AsyncResult
+
 from app.shared.enums.operation_type import OperationType
 from app.shared.enums.worker_queue import WorkerQueue
-from app.worker.celery_consumer import add, subtract, multiply, divide, xsum
-import operator
+from app.worker.celery_consumer import add, divide, multiply, subtract, xsum
 
 OP_MAP = {
     ast.Add: add,
@@ -23,10 +28,11 @@ ops = {
     ast.Add: operator.add,
     ast.Sub: operator.sub,
     ast.Mult: operator.mul,
-    ast.Div: operator.truediv
+    ast.Div: operator.truediv,
 }
 
-def build_chain_mutable(node):
+
+def build_chain_mutable(node: expr) -> Signature:
     if isinstance(node, ast.BinOp):
         left = build_chain_mutable(node.left)
         right = build_chain_mutable(node.right)
@@ -38,24 +44,24 @@ def build_chain_mutable(node):
         if isinstance(left, (int, float)) and isinstance(right, (int, float)):
             return op.s(left, right).set(queue=op_queue)
 
-        return chain(
-            left,
-            op.s(right).set(queue=op_queue)
-        )
+        return chain(left, op.s(right).set(queue=op_queue))
     elif isinstance(node, ast.Constant):
         return node.value
     else:
         raise ValueError(f"Unsupported node: {ast.dump(node)}")
-    
-def build_chain_immutable(node):
+
+
+def build_chain_immutable(
+    node: expr,
+) -> Signature:
     if isinstance(node, ast.BinOp):
         left, prev1 = build_chain_immutable(node.left)
         right, _ = build_chain_immutable(node.right)
 
         op_type = type(node.op)
         if op_type not in ops:
-            raise ValueError(f"Unsupported op")
-        
+            raise ValueError("Unsupported op")
+
         op = OP_MAP[op_type]
         op_queue = OP_QUEUE[op_type]
 
@@ -63,17 +69,16 @@ def build_chain_immutable(node):
             prev = ops[op_type](left, right)
             return op.si(left, right).set(queue=op_queue), prev
 
-        return chain(
-            left,
-            op.si(prev1, right).set(queue=op_queue)
-        ), ops[op_type](prev1, right)
+        return chain(left, op.si(prev1, right).set(queue=op_queue)), ops[
+            op_type
+        ](prev1, right)
     elif isinstance(node, ast.Constant):
         return node.value, 0
     else:
         raise ValueError(f"Unsupported node: {ast.dump(node)}")
-    
 
-def build_shorthand_chaining(node):
+
+def build_shorthand_chaining(node: expr) -> Signature:
     if isinstance(node, ast.BinOp):
         left = build_shorthand_chaining(node.left)
         right = build_shorthand_chaining(node.right)
@@ -90,29 +95,34 @@ def build_shorthand_chaining(node):
         return node.value
     else:
         raise ValueError(f"Unsupported node: {ast.dump(node)}")
-   
-def build_chord():
-    return chord(
-                header=[
-                    add.s(1, 1).set(queue=WorkerQueue.ADD_QUEUE),
-                    add.s(2, 2).set(queue=WorkerQueue.ADD_QUEUE),
-                    add.s(9, 9).set(queue=WorkerQueue.ADD_QUEUE)
-                ],
-                body=xsum.s().set(queue=WorkerQueue.ADD_QUEUE)
-            )
 
-def build_chord_with_callback():
+
+def build_chord() -> Signature:
+    return chord(
+        header=[
+            add.s(1, 1).set(queue=WorkerQueue.ADD_QUEUE),
+            add.s(2, 2).set(queue=WorkerQueue.ADD_QUEUE),
+            add.s(9, 9).set(queue=WorkerQueue.ADD_QUEUE),
+        ],
+        body=xsum.s().set(queue=WorkerQueue.ADD_QUEUE),
+    )
+
+
+def build_chord_with_callback() -> AsyncResult:
     callback = xsum.s().set(queue=WorkerQueue.ADD_QUEUE)
     return chord(
-                header=[
-                    add.s(1, 1).set(queue=WorkerQueue.ADD_QUEUE),
-                    add.s(2, 2).set(queue=WorkerQueue.ADD_QUEUE),
-                    add.s(9, 9).set(queue=WorkerQueue.ADD_QUEUE)
-                ]
-            )(callback)
+        header=[
+            add.s(1, 1).set(queue=WorkerQueue.ADD_QUEUE),
+            add.s(2, 2).set(queue=WorkerQueue.ADD_QUEUE),
+            add.s(9, 9).set(queue=WorkerQueue.ADD_QUEUE),
+        ]
+    )(callback)
 
-def extract_expression(expression: str, operation_type: OperationType):
-    tree = ast.parse(expression, mode='eval')
+
+def extract_expression(
+    expression: str, operation_type: OperationType
+) -> Signature | AsyncResult:
+    tree = ast.parse(expression, mode="eval")
     match operation_type:
         case OperationType.MUTABLE:
             return build_chain_mutable(tree.body)
