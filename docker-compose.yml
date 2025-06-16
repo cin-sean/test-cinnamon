@@ -14,7 +14,8 @@ services:
       - "6379:6379"
 
   worker_add:
-    build: .
+    build:
+      context: ./app/worker
     command: celery -A app.worker.celery_consumer worker --loglevel=info -Q add_queue
     depends_on:
       - rabbitmq
@@ -26,7 +27,8 @@ services:
       - .env
   
   worker_subtract:
-    build: .
+    build:
+      context: ./app/worker
     command: celery -A app.worker.celery_consumer worker --loglevel=info -Q subtract_queue
     depends_on:
       - rabbitmq
@@ -38,7 +40,8 @@ services:
       - .env
   
   worker_multiply:
-    build: .
+    build:
+      context: ./app/worker
     command: celery -A app.worker.celery_consumer worker --loglevel=info -Q multiply_queue
     depends_on:
       - rabbitmq
@@ -50,7 +53,8 @@ services:
       - .env
   
   worker_divide:
-    build: .
+    build:
+      context: ./app/worker
     command: celery -A app.worker.celery_consumer worker --loglevel=info -Q divide_queue
     depends_on:
       - rabbitmq
@@ -62,8 +66,9 @@ services:
       - .env
 
   api:
-    build: .
-    command: uvicorn app.api.main:app --host 0.0.0.0 --port 8000 --log-config /app/app/logger/logger-config.yaml --reload
+    build:
+      context: ./app/api
+    command: uvicorn app.api.main:app --host 0.0.0.0 --port 8000 --log-config /app/app/shared/logger/logger-config.yaml --reload
     container_name: fastapi_app
     ports:
       - "8000:8000"

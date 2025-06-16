@@ -23,6 +23,12 @@ class XSumParam(BaseModel):
 class ExpressionParam(BaseModel):
     expression: str
 
+class TaskResultResponse(BaseModel):
+    task_id: str
+    status: TaskStatus
+    result: int | None = None
+    error: str | None = None
+
 # 4 endpoints for operation services
 @router.post("/add")
 def add(payload: Param):
@@ -96,8 +102,19 @@ def get_task_status(task_id: str):
     result = celery_client.AsyncResult(task_id)
     if result.ready():
         if result.successful():
-            return {"status": TaskStatus.SUCCESS, "result": result.result}
+            return TaskResultResponse(
+                task_id=task_id,
+                status=TaskStatus.SUCCESS,
+                result=result.result
+            )
         else:
-            return {"status": TaskStatus.FAILURE, "error": str(result.result)}
+            return TaskResultResponse(
+                task_id=task_id,
+                status=TaskStatus.FAILURE,
+                error=str(result.result)
+            )
     else:
-        return {"status": result.state}
+        return TaskResultResponse(
+            task_id=task_id,
+            status=result.state,
+        )
