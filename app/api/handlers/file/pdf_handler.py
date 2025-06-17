@@ -1,5 +1,6 @@
-from PyPDF2 import PdfReader
 from io import BytesIO
+
+from PyPDF2 import PdfReader
 
 from app.api.handlers.file.base_file_handler import BaseFileHandler
 from app.shared.enums.file_extension import FileExtension

@@ -5,6 +5,7 @@ from app.api.handlers.file.image_handler import ImageHandler
 from app.api.handlers.file.pdf_handler import PDFHandler
 from app.shared.enums.file_extension import FileExtension
 
+
 class FileHandlerFactory:
     @staticmethod
     def get_handler(file: UploadFile, content: bytes) -> BaseFileHandler:

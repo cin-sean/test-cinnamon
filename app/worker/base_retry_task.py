@@ -1,25 +1,50 @@
+import logging
+from typing import Any
+
 from celery import Task
 from celery.exceptions import SoftTimeLimitExceeded
+
 from app.worker.settings import settings as worker_settings
-import logging
 
 logger = logging.getLogger(__name__)
+
 
 class BaseRetryTask(Task):
     autoretry_for = (SoftTimeLimitExceeded,)
     retry_kwargs = {
-        'max_retries': worker_settings.MAX_RETRIES,
-        'countdown': worker_settings.RETRY_DELAY
+        "max_retries": worker_settings.MAX_RETRIES,
+        "countdown": worker_settings.RETRY_DELAY,
     }
 
-    def on_retry(self, exc, task_id, args, kwargs, einfo):
+    def on_retry(
+        self,
+        exc: Exception,
+        task_id: str,
+        args: tuple[Any, ...],
+        kwargs: dict[str, Any],
+        einfo: Exception,
+    ) -> None:
         logger.warning(
-            f"🔁 [RETRY] Task {task_id} will retry due to {type(exc).__name__}: {exc}"
+            "🔁 [RETRY] Task %s will retry due to %s: %s",
+            task_id,
+            type(exc).__name__,
+            exc,
         )
 
-    def on_failure(self, exc, task_id, args, kwargs, einfo):
+    def on_failure(
+        self,
+        exc: Exception,
+        task_id: str,
+        args: tuple[Any, ...],
+        kwargs: dict[str, Any],
+        einfo: Exception,
+    ) -> None:
         logger.error(
-            f"❌ [FAILURE] Task {task_id} failed permanently.\n"
-            f"Exception: {type(exc).__name__}: {exc}\n"
-            f"Args: {args}\nKwargs: {kwargs}"
+            "❌ [FAILURE] Task %s failed permanently.\n"
+            "Exception: %s: %s\n"
+            "Args: %s\nKwargs: %s",
+            task_id,
+            type(exc).__name__,
+            args,
+            kwargs,
         )

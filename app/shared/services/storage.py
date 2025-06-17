@@ -1,5 +1,5 @@
 import os
-from typing import Optional, Union, IO
+from typing import IO, Optional, Union
 
 from starlette.datastructures import UploadFile
 
@@ -10,11 +10,13 @@ from app.shared.fs_client import fs_client
 def get_object_name(file_path: str) -> str:
     if not file_path.startswith(f"{Bucket.UPLOADED_FILES}/"):
         raise ValueError(f"Invalid file path: {file_path}")
-    return file_path[len(f"{Bucket.UPLOADED_FILES}/"):]
+    return file_path[len(f"{Bucket.UPLOADED_FILES}/") :]
+
 
 def get_file_name(file_path: str) -> str:
     object_name = get_object_name(file_path)
     return os.path.basename(object_name)
+
 
 class StorageService:
     def __init__(self):
@@ -24,11 +26,11 @@ class StorageService:
             self.fs_client.make_bucket(Bucket.UPLOADED_FILES)
 
     def upload_file(
-            self,
-            file: Union[UploadFile, IO[bytes]],
-            saved_file_name: str,
-            folder: str = "",
-            content_type: Optional[str] = None
+        self,
+        file: Union[UploadFile, IO[bytes]],
+        saved_file_name: str,
+        folder: str = "",
+        content_type: Optional[str] = None,
     ) -> str:
         object_name = os.path.join(folder, saved_file_name).replace("\\", "/")
         if isinstance(file, UploadFile):
@@ -56,7 +58,11 @@ class StorageService:
     def download_file(self, file_path: str) -> bytes:
         object_name = get_object_name(file_path)
         try:
-            response = self.fs_client.get_object(Bucket.UPLOADED_FILES, object_name)
+            response = self.fs_client.get_object(
+                Bucket.UPLOADED_FILES, object_name
+            )
             return response.read()
         except Exception as e:
-            raise FileNotFoundError(f"File not found: {object_name}. Error: {str(e)}")
+            raise FileNotFoundError(
+                f"File not found: {object_name}. Error: {str(e)}"
+            )

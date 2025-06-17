@@ -14,5 +14,3 @@ class TaskService:
 
     def update_task(self, task_update: TaskUpdate) -> Task | None:
         return self.repo.update_task(task_update)
-
-

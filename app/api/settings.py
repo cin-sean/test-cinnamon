@@ -1,13 +1,15 @@
-from typing import Optional, List
+from typing import List, Optional
 
 from pydantic import Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings
+
 
 class Settings(BaseSettings):
     SUPPORT_TYPES: Optional[List[str]] = Field(
-        None,
+        default=None,
         description="List support file extensions",
-        example=[".pdf", ".png", ".jpg"],
+        examples=[[".pdf", ".png", ".jpg"]],
     )
+
 
 settings = Settings()

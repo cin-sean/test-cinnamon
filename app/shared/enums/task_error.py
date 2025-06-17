@@ -1,5 +1,5 @@
-
 from enum import StrEnum, auto
+
 
 class TaskError(StrEnum):
     PENDING = auto()

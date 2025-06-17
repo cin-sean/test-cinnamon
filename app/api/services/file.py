@@ -5,11 +5,17 @@ from app.api.handlers.file.factory import FileHandlerFactory
 from app.api.payload.file import UploadedFileCreate, UploadedFileResponse
 from app.api.repos.file import UploadedFileRepo
 
+
 class FileService:
     def __init__(self, db: Session):
         self.repo = UploadedFileRepo(db)
 
-    def save_file(self, file: UploadFile, file_content: bytes, upload_file_create: UploadedFileCreate) -> UploadedFileResponse:
+    def save_file(
+        self,
+        file: UploadFile,
+        file_content: bytes,
+        upload_file_create: UploadedFileCreate,
+    ) -> UploadedFileResponse:
         # Validate and count pages
         handler = FileHandlerFactory.get_handler(file, file_content)
         handler.validate()
@@ -28,5 +34,5 @@ class FileService:
         return UploadedFileResponse(
             id=record.id,
             file_name=record.file_name,
-            total_pages=record.total_pages
+            total_pages=record.total_pages,
         )

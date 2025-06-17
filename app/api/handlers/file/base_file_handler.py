@@ -1,5 +1,6 @@
 from fastapi import UploadFile
 
+
 class BaseFileHandler:
     def __init__(self, file: UploadFile, content: bytes):
         self.file = file
