@@ -1,0 +1,5 @@
+celery[redis,rabbitmq]==5.4.0
+amqp==5.3.1
+pydantic==2.11.5
+pydantic-settings==2.9.1
+pyyaml==6.0.2
