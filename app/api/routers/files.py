@@ -23,7 +23,7 @@ router = APIRouter()
 
 
 @router.post("/infer")
-async def infer(file: UploadFile = File(...), db: Session = Depends(get_db)):
+def infer(file: UploadFile = File(...), db: Session = Depends(get_db)):
     try:
         storage_service = StorageService()
         saved_file_name = FileUtils.generate_unique_name(file)
@@ -70,9 +70,7 @@ async def infer(file: UploadFile = File(...), db: Session = Depends(get_db)):
 
 # Test API for uploading file
 @router.post("/upload", response_model=dict)
-async def upload_file(
-    file: UploadFile = File(...), db: Session = Depends(get_db)
-):
+def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db)):
     file_service = FileService(db)
     storage_service = StorageService()
     try:
